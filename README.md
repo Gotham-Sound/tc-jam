@@ -13,12 +13,18 @@ Accuracy target is one second. Rejam every few hours.
    seconds. When it locks, check that "This phone will show" matches the
    counter and tap **USE THIS JAM**. Zoom buttons help with small displays.
    Or jam by hand: enter a time a few seconds ahead of the counter and hit
-   **JAM** as the counter reaches it. Trim by a frame or a second if needed.
+   **JAM** as the counter reaches it. Trim by a quarter second or a second if needed.
 3. Tap the clock to mark a cue. Add a note afterwards if you want one.
 4. **Export** shares, copies, or downloads the list as CSV.
 
-The status line shows how long ago the jam was. It turns amber after 4 hours
-and red after 8.
+It is good to the second, not the frame. The frames slot shows `**` flashing
+once a second instead of numbers, and cues are logged to the second.
+
+The status line shows how long ago the jam was. The app assumes the jam is
+good to a quarter second and that the phone can drift 30 ppm against the
+timecode generator. It turns amber ("Rejam soon") when that adds up to 0.6 s,
+about 3 hours, and red ("REJAM") at one second, about 7 hours. On a rejam it
+reports how far the previous jam had actually drifted.
 
 ## How it keeps time
 

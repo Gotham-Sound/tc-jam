@@ -272,3 +272,12 @@ button:active:not(:disabled) { filter: brightness(1.4); }
 .expo input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); height: 32px; }
 .expo .small { flex: 0 0 auto; padding: 10px 14px; }
 [hidden] { display: none !important; }
+
+/* Frames slot: a marker that flashes once a second, never numbers. */
+.tc .frames { color: var(--accent); }
+.tc .frames.off { visibility: hidden; }
+.fine { margin-top: 8px; font-size: 12px; color: #5d6570; }
+.clock.stale { border-color: var(--bad); }
+.clock.stale .tc { color: var(--bad); }
+.status.bad { font-weight: 700; font-size: 15px; }
+.drift { color: var(--text); }

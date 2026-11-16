@@ -1,8 +1,13 @@
 (function () {
   'use strict';
 
-  const WARN_MS = 4 * 3600 * 1000; // amber: time to think about a rejam
-  const BAD_MS = 8 * 3600 * 1000;  // red: overdue
+  // How far off we think the clock could be: the jam itself is good to about
+  // a quarter second, and a phone clock can wander against a timecode
+  // generator by something like 30 parts per million.
+  const BASE_ERR_S = 0.25;
+  const DRIFT_PPM = 30;
+  const WARN_ERR_S = 0.6; // amber, about 3 hours after a jam
+  const BAD_ERR_S = 1.0;  // red, about 7 hours: could be off by a second
 
   const $ = (id) => document.getElementById(id);
   const store = {
@@ -51,6 +56,7 @@
 
   // ---------- clock ----------
 
+  const tapEl = $('tap');
   const tcMain = $('tc-main');
   const tcFrames = $('tc-frames');
   const statusEl = $('status');
@@ -58,6 +64,7 @@
   const trimTc = $('trim-tc');
   let lastShown = '';
   let lastStatus = '';
+  let starsOn = true;
   let prevWall = Date.now();
   let prevPerf = performance.now();
 
@@ -89,38 +96,47 @@
 
     if (jam) {
       const tc = nowTc();
-      const s = TC.formatTc(tc, jam.rate);
+      const s = TC.formatTc(tc, jam.rate).slice(0, 8);
       if (s !== lastShown) {
         lastShown = s;
-        tcMain.textContent = s.slice(0, 8);
-        tcFrames.textContent = s.slice(8);
+        tcMain.textContent = s;
         trimTc.textContent = s;
       }
+      // This clock is good to the second, not the frame. The frames slot
+      // shows a marker that flashes once a second instead of numbers.
+      const on = tc.f * 2 < TC.RATES[jam.rate].nominal;
+      if (on !== starsOn) {
+        starsOn = on;
+        tcFrames.classList.toggle('off', !on);
+      }
       const age = wall - jam.wall;
+      const err = BASE_ERR_S + (age / 1000) * DRIFT_PPM * 1e-6;
       let cls = 'ok';
       let text = 'Jammed ' + ago(age);
       if (clockJumped) {
         cls = 'bad';
-        text = 'Phone clock changed. Rejam.';
-      } else if (age > BAD_MS) {
+        text = 'REJAM. Phone clock changed.';
+      } else if (err >= BAD_ERR_S) {
         cls = 'bad';
-        text += '. Rejam overdue.';
-      } else if (age > WARN_MS) {
+        text = 'REJAM. Jammed ' + ago(age) + ', may be off by over a second.';
+      } else if (err >= WARN_ERR_S) {
         cls = 'warn';
-        text += '. Time to rejam.';
+        text += '. Rejam soon.';
       }
       const st = cls + '|' + text;
       if (st !== lastStatus) {
         lastStatus = st;
         statusEl.className = 'status ' + cls;
         statusEl.textContent = text;
+        tapEl.classList.toggle('stale', cls === 'bad');
         hintEl.textContent = 'Tap to mark';
       }
     } else if (lastStatus !== 'none') {
       lastStatus = 'none';
       lastShown = '';
       tcMain.textContent = '--:--:--';
-      tcFrames.textContent = ':--';
+      tcFrames.classList.remove('off');
+      tapEl.classList.remove('stale');
       statusEl.className = 'status';
       statusEl.textContent = 'Not jammed';
       hintEl.textContent = 'Tap to jam';
@@ -131,7 +147,6 @@
   // ---------- cues ----------
 
   const cuesEl = $('cues');
-  const tapEl = $('tap');
 
   function saveCues() {
     store.set('tcjam.cues', cues);
@@ -150,9 +165,6 @@
       const tc = document.createElement('span');
       tc.className = 'ctc';
       tc.textContent = c.tc.slice(0, 8);
-      const fr = document.createElement('small');
-      fr.textContent = c.tc.slice(8);
-      tc.appendChild(fr);
 
       const note = document.createElement('input');
       note.type = 'text';
@@ -186,7 +198,8 @@
 
   function mark() {
     const wall = Date.now();
-    const tc = TC.formatTc(TC.framesToTc(TC.framesAt(jam, wall), jam.rate), jam.rate);
+    // Cues are kept to the second: that is all this clock is good for.
+    const tc = TC.formatTc(TC.framesToTc(TC.framesAt(jam, wall), jam.rate), jam.rate).slice(0, 8);
     cues.push({ tc: tc, rate: jam.rate, wall: wall, note: '' });
     saveCues();
     renderCues();
@@ -225,8 +238,8 @@
   // ---------- jam ----------
 
   const jamPanel = $('jam-panel');
-  const ins = { h: $('in-h'), m: $('in-m'), s: $('in-s'), f: $('in-f') };
-  const order = ['h', 'm', 's', 'f'];
+  const ins = { h: $('in-h'), m: $('in-m'), s: $('in-s') };
+  const order = ['h', 'm', 's'];
 
   function setInputs(tc) {
     order.forEach((k) => { ins[k].value = TC.pad(tc[k]); });
@@ -238,7 +251,7 @@
       h: n(ins.h, 23),
       m: n(ins.m, 59),
       s: n(ins.s, 59),
-      f: n(ins.f, TC.RATES[rate].nominal - 1),
+      f: 0,
     };
   }
 
@@ -274,7 +287,28 @@
     setInputs(addSeconds(readInputs(), 5));
   });
 
+  // On a rejam, say how far the old jam had wandered. It is the only real
+  // measurement of drift we ever get.
+  function driftNote(old, j) {
+    const el = $('drift');
+    el.hidden = true;
+    if (!old || old.rate !== j.rate) return;
+    const day = TC.dayFrames(j.rate);
+    let d = TC.framesAt(old, j.wall) - j.f0;
+    if (d > day / 2) d -= day;
+    if (d < -day / 2) d += day;
+    const secs = d / TC.RATES[j.rate].real;
+    const age = j.wall - old.wall;
+    if (age < 60000 || Math.abs(secs) > 30) return; // a fresh retry, or a different timecode
+    const mag = Math.abs(secs);
+    el.textContent = mag < 0.15
+      ? 'The previous jam (' + ago(age) + ') was still on time.'
+      : 'The previous jam (' + ago(age) + ') had ended up ' + mag.toFixed(1) + ' s ' + (secs > 0 ? 'ahead.' : 'behind.');
+    el.hidden = false;
+  }
+
   function setJam(j) {
+    driftNote(jam, j);
     jam = j;
     store.set('tcjam.jam', jam);
     clockJumped = false;
@@ -301,12 +335,8 @@
       if (!jam) return;
       const kind = b.dataset.trim;
       const sign = kind[0] === '-' ? -1 : 1;
-      if (kind[1] === 'f') {
-        jam.f0 += sign;
-      } else {
-        // Shift by one real second so the seconds digit moves by exactly one.
-        jam.wall -= sign * 1000;
-      }
+      // Shift the jam instant: a whole second, or a quarter second.
+      jam.wall -= sign * (kind[1] === 'q' ? 250 : 1000);
       store.set('tcjam.jam', jam);
       lastShown = '';
     });
@@ -319,14 +349,14 @@
 
   function asText() {
     return cues
-      .map((c, i) => (i + 1) + '\t' + c.tc + (c.note ? '\t' + c.note : ''))
+      .map((c, i) => (i + 1) + '\t' + c.tc.slice(0, 8) + (c.note ? '\t' + c.note : ''))
       .join('\n');
   }
 
   function asCsv() {
     const q = (s) => '"' + String(s).replace(/"/g, '""') + '"';
     const rows = cues.map((c, i) =>
-      [i + 1, c.tc, q(c.note || ''), TC.RATES[c.rate] ? TC.RATES[c.rate].label : c.rate,
+      [i + 1, c.tc.slice(0, 8), q(c.note || ''), TC.RATES[c.rate] ? TC.RATES[c.rate].label : c.rate,
         new Date(c.wall).toISOString()].join(','));
     return ['#,Timecode,Note,Rate,Marked at (UTC)'].concat(rows).join('\r\n') + '\r\n';
   }
