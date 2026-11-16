@@ -13,6 +13,9 @@
     '30':     { label: '30',     nominal: 30, real: 30,           df: false },
   };
 
+  // Object key order would put the whole-number rates first, so list it explicitly.
+  const RATE_ORDER = ['23.976', '24', '25', '29.97', '29.97df', '30'];
+
   const DF_PER_10MIN = 17982; // frames in 10 minutes of 29.97 drop-frame
   const DF_PER_MIN = 1798;    // frames in a dropped minute
 
@@ -82,7 +85,7 @@
     return { rate: newRate, f0: tcToFrames(tc, newRate), wall: jam.wall };
   }
 
-  const api = { RATES, dayFrames, tcToFrames, framesToTc, formatTc, framesAt, rerate, pad };
+  const api = { RATES, RATE_ORDER, dayFrames, tcToFrames, framesToTc, formatTc, framesAt, rerate, pad };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.TC = api;
 })(typeof self !== 'undefined' ? self : this);

@@ -32,7 +32,7 @@
   // ---------- frame rate ----------
 
   const rateSel = $('rate');
-  Object.keys(TC.RATES).forEach((key) => {
+  TC.RATE_ORDER.forEach((key) => {
     const o = document.createElement('option');
     o.value = key;
     o.textContent = TC.RATES[key].label;
