@@ -34,6 +34,84 @@
   let readings = [];     // [{ t: seconds since t0, s: second of day }]
   let solution = null;   // locked { offset, ... }
   let lastText = '';
+  let clip = 0;          // share of the box that is blown out to white
+  let track = null;
+  let expo = null;       // { mode: 'time' | 'comp', min, max, pos } when the camera allows it
+  let expoAuto = true;   // keep darkening on our own until the box stops clipping
+  let expoAt = 0;
+
+  const expoRow = $('cam-expo');
+  const expoSlider = $('cam-expo-slider');
+  const expoNote = $('cam-expo-note');
+
+  // ---------- exposure ----------
+  // A lit display in a dark room gets blown out because the camera exposes
+  // for the whole dark scene. Where the browser allows it (Chrome on Android),
+  // take over exposure: either shutter time directly, or exposure compensation.
+
+  function setupExposure() {
+    track = stream ? stream.getVideoTracks()[0] : null;
+    expo = null;
+    expoAuto = true;
+    const caps = track && track.getCapabilities ? track.getCapabilities() : {};
+    const now = track && track.getSettings ? track.getSettings() : {};
+    const t = caps.exposureTime;
+    const c = caps.exposureCompensation;
+    if (caps.exposureMode && caps.exposureMode.indexOf('manual') >= 0 && t && t.max > t.min) {
+      const min = Math.max(t.min, 1);
+      expo = { mode: 'time', min: min, max: t.max, pos: 0.6 };
+      if (now.exposureTime >= min) expo.pos = Math.log(now.exposureTime / min) / Math.log(t.max / min);
+    } else if (c && c.max > c.min) {
+      expo = { mode: 'comp', min: c.min, max: c.max, pos: ((now.exposureCompensation || 0) - c.min) / (c.max - c.min) };
+    }
+    expoRow.hidden = !expo;
+    expoNote.hidden = !!expo || !stream;
+    if (expo) {
+      expo.pos = Math.min(1, Math.max(0, expo.pos));
+      expoSlider.value = Math.round(expo.pos * 1000);
+    }
+  }
+
+  function applyExposure() {
+    if (!expo || !track) return;
+    let c;
+    if (expo.mode === 'time') {
+      // Log scale: each step of the slider is the same change in brightness.
+      c = { exposureMode: 'manual', exposureTime: Math.round(expo.min * Math.pow(expo.max / expo.min, expo.pos)) };
+    } else {
+      c = { exposureCompensation: expo.min + (expo.max - expo.min) * expo.pos };
+    }
+    track.applyConstraints({ advanced: [c] }).catch(() => {});
+  }
+
+  // Called after each look at the box. Only ever darkens, and stops as soon
+  // as the user touches the slider.
+  function autoExposure() {
+    if (!expo || !expoAuto || clip < 0.3 || expo.pos <= 0) return;
+    const now = performance.now();
+    if (now - expoAt < 250) return; // give the camera time to respond
+    expoAt = now;
+    expo.pos = Math.max(0, expo.pos - 0.06);
+    expoSlider.value = Math.round(expo.pos * 1000);
+    applyExposure();
+  }
+
+  expoSlider.addEventListener('input', () => {
+    if (!expo) return;
+    expoAuto = false;
+    expo.pos = expoSlider.value / 1000;
+    applyExposure();
+  });
+
+  $('cam-expo-auto').addEventListener('click', () => {
+    if (!expo || !track) return;
+    const c = expo.mode === 'time' ? { exposureMode: 'continuous' } : { exposureCompensation: 0 };
+    track.applyConstraints({ advanced: [c] }).catch(() => {});
+    if (expo.mode === 'comp') expo.pos = (0 - expo.min) / (expo.max - expo.min);
+    else expo.pos = 0.6;
+    expoSlider.value = Math.round(expo.pos * 1000);
+    expoAuto = true;
+  });
 
   function loadScript(src) {
     return new Promise((resolve, reject) => {
@@ -103,6 +181,9 @@
       if (!seenMed && acc >= n * 0.5) { med = v; seenMed = true; }
       if (acc >= n * 0.98) { hi = v; break; }
     }
+    let white = 0;
+    for (let v = 250; v < 256; v++) white += hist[v];
+    clip = white / n;
     if (hi - lo < 30) return false; // nothing but a flat surface in the box
     const invert = med < (lo + hi) / 2; // mostly dark: lit digits on black
     const k = 255 / (hi - lo);
@@ -124,7 +205,9 @@
   async function readFrame(wall) {
     busy = true;
     try {
-      if (!grab()) return;
+      const usable = grab();
+      autoExposure();
+      if (!usable) return;
       const res = await worker.recognize(canvas);
       if (!running) return;
       const tc = TC.parseReading(res.data.text);
@@ -201,6 +284,9 @@
     readings = [];
     solution = null;
     lastText = '';
+    clip = 0;
+    expoRow.hidden = true;
+    expoNote.hidden = true;
     t0 = Date.now();
     out.textContent = '--:--:--:--';
     out.classList.add('dim');
@@ -223,6 +309,7 @@
         });
         if (!running) { stop(); return; }
         video.srcObject = stream;
+        setupExposure();
       }
       await video.play();
     } catch (e) {
@@ -250,6 +337,8 @@
     if (stream) {
       stream.getTracks().forEach((t) => t.stop());
       stream = null;
+      track = null;
+      expo = null;
     }
     video.pause();
     video.srcObject = null;
@@ -285,6 +374,8 @@
     state: () => ({
       running: running,
       readings: readings.length,
+      clip: clip,
+      expo: expo,
       solution: solution,
       tcSeconds: solution ? tcSecondsNow(Date.now()) : null,
     }),

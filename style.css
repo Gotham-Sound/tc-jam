@@ -267,3 +267,8 @@ button:active:not(:disabled) { filter: brightness(1.4); }
 .cam-out .help { margin: 4px 0 0; }
 .trim-tc.dim { color: var(--dim); }
 .zoom .small.on { border-color: var(--accent); color: var(--accent); }
+.expo { align-items: center; }
+.expo label { font-size: 14px; color: var(--dim); }
+.expo input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); height: 32px; }
+.expo .small { flex: 0 0 auto; padding: 10px 14px; }
+[hidden] { display: none !important; }

@@ -101,6 +101,12 @@
       <button data-zoom="3" class="small">3x</button>
       <button data-zoom="4" class="small">4x</button>
     </div>
+    <div id="cam-expo" class="row expo" hidden>
+      <label for="cam-expo-slider">Exposure</label>
+      <input id="cam-expo-slider" type="range" min="0" max="1000" step="1" aria-label="Exposure, darker to brighter">
+      <button id="cam-expo-auto" class="small">Auto</button>
+    </div>
+    <div id="cam-expo-note" class="help" hidden>This browser does not allow exposure control. If the display is blown out, add light on the scene or move closer.</div>
     <div id="cam-msg" class="help" aria-live="polite"></div>
     <div class="cam-out">
       <div class="help">This phone will show</div>
