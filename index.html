@@ -50,6 +50,9 @@
       <button id="jam-close" class="link">Done</button>
     </div>
 
+    <button id="jam-cam" class="camgo">Jam from camera</button>
+    <p class="help or">or by hand</p>
+
     <p class="help">Enter a time a few seconds ahead of the counter you are jamming to. Hit JAM the moment the counter reaches it.</p>
 
     <div class="tcin">
@@ -81,6 +84,32 @@
   </div>
 </div>
 
+<!-- Camera jam panel -->
+<div id="cam-panel" class="sheet" hidden>
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <h2>Camera jam</h2>
+      <button id="cam-close" class="link">Cancel</button>
+    </div>
+    <div id="cam-stage" class="cam-stage">
+      <video id="cam-video" playsinline muted></video>
+      <div id="cam-box" class="cam-box"></div>
+    </div>
+    <div class="row zoom">
+      <button data-zoom="1" class="small on">1x</button>
+      <button data-zoom="2" class="small">2x</button>
+      <button data-zoom="3" class="small">3x</button>
+      <button data-zoom="4" class="small">4x</button>
+    </div>
+    <div id="cam-msg" class="help" aria-live="polite"></div>
+    <div class="cam-out">
+      <div class="help">This phone will show</div>
+      <div id="cam-tc" class="trim-tc dim">--:--:--:--</div>
+    </div>
+    <button id="cam-use" class="go" disabled>USE THIS JAM</button>
+  </div>
+</div>
+
 <!-- Export panel -->
 <div id="export-panel" class="sheet" hidden>
   <div class="sheet-inner">
@@ -99,5 +128,6 @@
 
 <script src="tc.js"></script>
 <script src="app.js"></script>
+<script src="camjam.js"></script>
 </body>
 </html>

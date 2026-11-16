@@ -1,6 +1,6 @@
 // Network first so updates show up right away; cache as the offline fallback.
-const CACHE = 'tc-jam-v1';
-const FILES = ['./', 'index.html', 'style.css', 'tc.js', 'app.js', 'manifest.webmanifest', 'icon.svg'];
+const CACHE = 'tc-jam-v2';
+const FILES = ['./', 'index.html', 'style.css', 'tc.js', 'app.js', 'camjam.js', 'manifest.webmanifest', 'icon.svg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

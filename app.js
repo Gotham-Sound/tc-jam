@@ -274,20 +274,27 @@
     setInputs(addSeconds(readInputs(), 5));
   });
 
-  $('jam-go').addEventListener('pointerdown', (e) => {
-    if (e.button) return;
-    const wall = Date.now();
-    const tc = readInputs();
-    jam = { rate: rate, f0: TC.tcToFrames(tc, rate), wall: wall };
+  function setJam(j) {
+    jam = j;
     store.set('tcjam.jam', jam);
     clockJumped = false;
     store.set('tcjam.jumped', false);
-    setInputs(tc);
     lastShown = '';
     lastStatus = '';
     $('trim').hidden = false;
     if (navigator.vibrate) navigator.vibrate(30);
+  }
+
+  $('jam-go').addEventListener('pointerdown', (e) => {
+    if (e.button) return;
+    const wall = Date.now();
+    const tc = readInputs();
+    setJam({ rate: rate, f0: TC.tcToFrames(tc, rate), wall: wall });
+    setInputs(tc);
   });
+
+  // Used by the camera jam.
+  window.TCApp = { rate: () => rate, setJam: setJam };
 
   document.querySelectorAll('[data-trim]').forEach((b) => {
     b.addEventListener('click', () => {

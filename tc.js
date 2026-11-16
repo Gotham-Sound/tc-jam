@@ -85,7 +85,76 @@
     return { rate: newRate, f0: tcToFrames(tc, newRate), wall: jam.wall };
   }
 
-  const api = { RATES, RATE_ORDER, dayFrames, tcToFrames, framesToTc, formatTc, framesAt, rerate, pad };
+
+  // Camera jam solver.
+  //
+  // Each reading says "the counter showed second S at time t". The counter
+  // only shows whole seconds reliably, so one reading pins the offset
+  // (timecode seconds minus clock seconds) to a one-second-wide window:
+  //   S - t <= offset < S + 1 - t
+  // Readings taken at different points within the second overlap in a much
+  // narrower window. Misreads fall outside it and are simply outvoted.
+  //
+  // readings: [{ t: seconds (any epoch), s: timecode second of day }]
+  // returns { offset, width, agree, total, span, distinct } or null
+  function solveOffset(readings) {
+    const n = readings.length;
+    if (!n) return null;
+    const ev = [];
+    for (let i = 0; i < n; i++) {
+      const lo = readings[i].s - readings[i].t;
+      ev.push([lo, 1], [lo + 1, -1]);
+    }
+    // Closings before openings at the same point: windows are half open.
+    ev.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    let count = 0, best = 0, bestLo = 0, bestHi = 0;
+    for (let i = 0; i < ev.length; i++) {
+      count += ev[i][1];
+      if (ev[i][1] === 1 && count > best) {
+        best = count;
+        bestLo = ev[i][0];
+        bestHi = ev[i + 1][0];
+      }
+    }
+    const offset = (bestLo + bestHi) / 2;
+    let tMin = Infinity, tMax = -Infinity;
+    const seen = {};
+    for (let i = 0; i < n; i++) {
+      const lo = readings[i].s - readings[i].t;
+      if (offset >= lo && offset < lo + 1) {
+        tMin = Math.min(tMin, readings[i].t);
+        tMax = Math.max(tMax, readings[i].t);
+        seen[readings[i].s] = 1;
+      }
+    }
+    return {
+      offset: offset,
+      width: bestHi - bestLo,
+      agree: best,
+      total: n,
+      span: tMax - tMin,
+      distinct: Object.keys(seen).length,
+    };
+  }
+
+  // Pull HH:MM:SS(:FF) out of OCR text. Returns { h, m, s, f } or null.
+  // A line must be exactly 8 digits (or 6, for counters with no frames):
+  // a dropped digit would otherwise shift everything and read as a valid time.
+  function parseReading(text) {
+    const lines = String(text).split(/\n/);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].replace(/\s+/g, '');
+      if (!/^[\d:;.,]+$/.test(line)) continue;
+      const d = line.replace(/\D/g, '');
+      if (d.length !== 8 && d.length !== 6) continue;
+      const h = +d.slice(0, 2), mi = +d.slice(2, 4), s = +d.slice(4, 6);
+      if (h > 23 || mi > 59 || s > 59) continue;
+      return { h: h, m: mi, s: s, f: d.length === 8 ? +d.slice(6, 8) : null };
+    }
+    return null;
+  }
+
+  const api = { RATES, RATE_ORDER, dayFrames, tcToFrames, framesToTc, formatTc, framesAt, rerate, pad, solveOffset, parseReading };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.TC = api;
 })(typeof self !== 'undefined' ? self : this);

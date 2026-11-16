@@ -43,3 +43,38 @@ assert.strictEqual(fmt(r.f0, '24'), '01:02:03:23');
 assert.strictEqual(r.wall, 5);
 
 console.log('all timecode tests passed');
+
+// ---- camera jam solver ----
+{
+  // Counter is 37000.25 s ahead of the clock. Sample 10x/s for 3 s at odd phases.
+  const truth = 37000.25;
+  const rs = [];
+  for (let i = 0; i < 30; i++) {
+    const t = 100 + i * 0.103;
+    rs.push({ t, s: Math.floor(t + truth) });
+  }
+  let r = TC.solveOffset(rs);
+  assert.strictEqual(r.agree, 30);
+  assert(Math.abs(r.offset - truth) < 0.06, 'offset ' + r.offset);
+  assert(r.width < 0.12 && r.distinct >= 3 && r.span > 2.5);
+
+  // A fifth of the readings are garbage: still lands, garbage is outvoted.
+  const bad = rs.map((x, i) => (i % 5 === 0 ? { t: x.t, s: x.s + 7 * (i + 1) } : x));
+  r = TC.solveOffset(bad);
+  assert.strictEqual(r.agree, 24);
+  assert(Math.abs(r.offset - truth) < 0.08, 'offset with misreads ' + r.offset);
+
+  // A frozen display never gets agreement across more than a second.
+  const frozen = [];
+  for (let i = 0; i < 30; i++) frozen.push({ t: 100 + i * 0.1, s: 500 });
+  r = TC.solveOffset(frozen);
+  assert(r.span <= 1.0 && r.distinct === 1);
+
+  assert.strictEqual(TC.solveOffset([]), null);
+  assert.deepStrictEqual(TC.parseReading('02:09:30:13 ;\n'), { h: 2, m: 9, s: 30, f: 13 });
+  assert.deepStrictEqual(TC.parseReading('23.976\n02 09 31\n'), { h: 2, m: 9, s: 31, f: null });
+  assert.strictEqual(TC.parseReading('2:09:32:20'), null); // dropped digit must not shift into a valid time
+  assert.strictEqual(TC.parseReading('23.976'), null);
+  assert.strictEqual(TC.parseReading('02:79:30:13'), null);
+  console.log('camera jam solver tests passed');
+}

@@ -226,3 +226,44 @@ button:active:not(:disabled) { filter: brightness(1.4); }
 
 .trim { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; text-align: center; }
 .trim-tc { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 34px; font-weight: 600; }
+
+.camgo {
+  width: 100%;
+  margin-top: 12px;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 12px;
+  touch-action: manipulation;
+}
+.help.or { text-align: center; margin: 12px 0 0; }
+
+.cam-stage {
+  position: relative;
+  height: 36vh;
+  min-height: 180px;
+  margin-top: 10px;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.cam-stage video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cam-box {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 50%;
+  transform: translateY(-50%);
+  aspect-ratio: 4.2 / 1;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.45);
+}
+.cam-box.locked { border-color: var(--ok); }
+.cam-out { text-align: center; margin: 6px 0 10px; }
+.cam-out .help { margin: 4px 0 0; }
+.trim-tc.dim { color: var(--dim); }
+.zoom .small.on { border-color: var(--accent); color: var(--accent); }
