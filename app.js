@@ -58,7 +58,8 @@
 
   const tapEl = $('tap');
   const tcMain = $('tc-main');
-  const tcFrames = $('tc-frames');
+  const tcTens = $('tc-tens');
+  const tcStar = $('tc-star');
   const statusEl = $('status');
   const hintEl = $('hint');
   const trimTc = $('trim-tc');
@@ -96,18 +97,19 @@
 
     if (jam) {
       const tc = nowTc();
-      const s = TC.formatTc(tc, jam.rate).slice(0, 8);
+      const s = TC.approx(TC.formatTc(tc, jam.rate));
       if (s !== lastShown) {
         lastShown = s;
-        tcMain.textContent = s;
+        tcMain.textContent = s.slice(0, 8);
+        tcTens.textContent = s.slice(8, 10);
         trimTc.textContent = s;
       }
-      // This clock is good to the second, not the frame. The frames slot
-      // shows a marker that flashes once a second instead of numbers.
+      // This clock is good to the second, not the frame. Tens of frames are
+      // shown; the units are a star that flashes once a second.
       const on = tc.f * 2 < TC.RATES[jam.rate].nominal;
       if (on !== starsOn) {
         starsOn = on;
-        tcFrames.classList.toggle('off', !on);
+        tcStar.classList.toggle('off', !on);
       }
       const age = wall - jam.wall;
       const err = BASE_ERR_S + (age / 1000) * DRIFT_PPM * 1e-6;
@@ -135,7 +137,8 @@
       lastStatus = 'none';
       lastShown = '';
       tcMain.textContent = '--:--:--';
-      tcFrames.classList.remove('off');
+      tcTens.textContent = ':-';
+      tcStar.classList.remove('off');
       tapEl.classList.remove('stale');
       statusEl.className = 'status';
       statusEl.textContent = 'Not jammed';
@@ -164,7 +167,7 @@
 
       const tc = document.createElement('span');
       tc.className = 'ctc';
-      tc.textContent = c.tc.slice(0, 8);
+      tc.textContent = TC.approx(c.tc);
 
       const note = document.createElement('input');
       note.type = 'text';
@@ -198,8 +201,7 @@
 
   function mark() {
     const wall = Date.now();
-    // Cues are kept to the second: that is all this clock is good for.
-    const tc = TC.formatTc(TC.framesToTc(TC.framesAt(jam, wall), jam.rate), jam.rate).slice(0, 8);
+    const tc = TC.formatTc(TC.framesToTc(TC.framesAt(jam, wall), jam.rate), jam.rate);
     cues.push({ tc: tc, rate: jam.rate, wall: wall, note: '' });
     saveCues();
     renderCues();
@@ -349,14 +351,14 @@
 
   function asText() {
     return cues
-      .map((c, i) => (i + 1) + '\t' + c.tc.slice(0, 8) + (c.note ? '\t' + c.note : ''))
+      .map((c, i) => (i + 1) + '\t' + TC.approx(c.tc) + (c.note ? '\t' + c.note : ''))
       .join('\n');
   }
 
   function asCsv() {
     const q = (s) => '"' + String(s).replace(/"/g, '""') + '"';
     const rows = cues.map((c, i) =>
-      [i + 1, c.tc.slice(0, 8), q(c.note || ''), TC.RATES[c.rate] ? TC.RATES[c.rate].label : c.rate,
+      [i + 1, TC.approx(c.tc), q(c.note || ''), TC.RATES[c.rate] ? TC.RATES[c.rate].label : c.rate,
         new Date(c.wall).toISOString()].join(','));
     return ['#,Timecode,Note,Rate,Marked at (UTC)'].concat(rows).join('\r\n') + '\r\n';
   }

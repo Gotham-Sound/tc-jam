@@ -71,6 +71,12 @@
     return pad(tc.h) + ':' + pad(tc.m) + ':' + pad(tc.s) + sep + pad(tc.f);
   }
 
+  // What we are willing to show: tens of frames, with the units starred out.
+  // Accepts a full "HH:MM:SS:FF" string; older seconds-only strings pass through.
+  function approx(full) {
+    return full.length >= 11 ? full.slice(0, 10) + '*' : full;
+  }
+
   // jam = { rate, f0, wall }: timecode was frame f0 at wall-clock ms `wall`.
   function framesAt(jam, nowMs) {
     const r = RATES[jam.rate];
@@ -154,7 +160,7 @@
     return null;
   }
 
-  const api = { RATES, RATE_ORDER, dayFrames, tcToFrames, framesToTc, formatTc, framesAt, rerate, pad, solveOffset, parseReading };
+  const api = { RATES, RATE_ORDER, dayFrames, tcToFrames, framesToTc, formatTc, framesAt, rerate, pad, approx, solveOffset, parseReading };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.TC = api;
 })(typeof self !== 'undefined' ? self : this);

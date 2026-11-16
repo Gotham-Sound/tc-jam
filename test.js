@@ -78,3 +78,7 @@ console.log('all timecode tests passed');
   assert.strictEqual(TC.parseReading('02:79:30:13'), null);
   console.log('camera jam solver tests passed');
 }
+
+assert.strictEqual(TC.approx('02:09:32:17'), '02:09:32:1*');
+assert.strictEqual(TC.approx('02:09:32;05'), '02:09:32;0*');
+assert.strictEqual(TC.approx('02:09:32'), '02:09:32');

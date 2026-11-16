@@ -17,8 +17,9 @@ Accuracy target is one second. Rejam every few hours.
 3. Tap the clock to mark a cue. Add a note afterwards if you want one.
 4. **Export** shares, copies, or downloads the list as CSV.
 
-It is good to the second, not the frame. The frames slot shows `**` flashing
-once a second instead of numbers, and cues are logged to the second.
+It is good to the second, not the frame. The frames slot shows the tens digit
+only, with the units replaced by a `*` that flashes once a second (for example
+`02:09:32:1*`). Cues and exports are written the same way.
 
 The status line shows how long ago the jam was. The app assumes the jam is
 good to a quarter second and that the phone can drift 30 ppm against the

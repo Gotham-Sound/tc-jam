@@ -266,7 +266,7 @@
     if (!running) return;
     if (solution) {
       const j = jamFromSolution();
-      out.textContent = TC.formatTc(TC.framesToTc(j.f0, j.rate), j.rate).slice(0, 8);
+      out.textContent = TC.approx(TC.formatTc(TC.framesToTc(j.f0, j.rate), j.rate));
       out.classList.remove('dim');
       box.classList.add('locked');
       useBtn.disabled = false;
@@ -288,7 +288,7 @@
     expoRow.hidden = true;
     expoNote.hidden = true;
     t0 = Date.now();
-    out.textContent = '--:--:--';
+    out.textContent = '--:--:--:-*';
     out.classList.add('dim');
     box.classList.remove('locked');
     useBtn.disabled = true;

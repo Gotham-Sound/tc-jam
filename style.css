@@ -274,8 +274,8 @@ button:active:not(:disabled) { filter: brightness(1.4); }
 [hidden] { display: none !important; }
 
 /* Frames slot: a marker that flashes once a second, never numbers. */
-.tc .frames { color: var(--accent); }
-.tc .frames.off { visibility: hidden; }
+.tc .star { color: var(--accent); }
+.tc .star.off { visibility: hidden; }
 .fine { margin-top: 8px; font-size: 12px; color: #5d6570; }
 .clock.stale { border-color: var(--bad); }
 .clock.stale .tc { color: var(--bad); }

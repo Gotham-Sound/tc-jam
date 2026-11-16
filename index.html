@@ -24,10 +24,10 @@
 
 <main>
   <button id="tap" class="clock" aria-label="Mark a cue at the current timecode">
-    <div id="tc" class="tc"><span id="tc-main">--:--:--</span><span id="tc-frames" class="frames" aria-hidden="true">:**</span></div>
+    <div id="tc" class="tc"><span id="tc-main">--:--:--</span><span class="frames"><span id="tc-tens">:-</span><span id="tc-star" class="star" aria-hidden="true">*</span></span></div>
     <div id="status" class="status">Not jammed</div>
     <div id="hint" class="hint">Tap to jam</div>
-    <div class="fine">Good to the second, not the frame</div>
+    <div class="fine">Good to the second, not the frame. * hides the frame units.</div>
   </button>
 
   <div class="bar">
@@ -71,7 +71,7 @@
     <button id="jam-go" class="go">JAM</button>
 
     <div class="trim" id="trim" hidden>
-      <div class="trim-tc" id="trim-tc">--:--:--</div>
+      <div class="trim-tc" id="trim-tc">--:--:--:-*</div>
       <div class="help">Running now. Trim if it is off.</div>
       <div id="drift" class="help drift" hidden></div>
       <div class="row">
@@ -110,7 +110,7 @@
     <div id="cam-msg" class="help" aria-live="polite"></div>
     <div class="cam-out">
       <div class="help">This phone will show</div>
-      <div id="cam-tc" class="trim-tc dim">--:--:--</div>
+      <div id="cam-tc" class="trim-tc dim">--:--:--:-*</div>
     </div>
     <button id="cam-use" class="go" disabled>USE THIS JAM</button>
   </div>

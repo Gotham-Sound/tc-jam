@@ -1,5 +1,5 @@
 // Network first so updates show up right away; cache as the offline fallback.
-const CACHE = 'tc-jam-v4';
+const CACHE = 'tc-jam-v5';
 const FILES = ['./', 'index.html', 'style.css', 'tc.js', 'app.js', 'camjam.js', 'manifest.webmanifest', 'icon.svg'];
 
 self.addEventListener('install', (e) => {
