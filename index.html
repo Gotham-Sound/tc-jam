@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d0f12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TC Jam">
+<title>TC Jam</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="brand">TC Jam</div>
+  <label class="rate">
+    <span>Frame rate</span>
+    <select id="rate" aria-label="Frame rate"></select>
+  </label>
+</header>
+
+<main>
+  <button id="tap" class="clock" aria-label="Mark a cue at the current timecode">
+    <div id="tc" class="tc"><span id="tc-main">--:--:--</span><span id="tc-frames" class="frames">:--</span></div>
+    <div id="status" class="status">Not jammed</div>
+    <div id="hint" class="hint">Tap to jam</div>
+  </button>
+
+  <div class="bar">
+    <button id="btn-jam">Jam</button>
+    <button id="btn-undo" disabled>Undo</button>
+    <button id="btn-export" disabled>Export</button>
+  </div>
+
+  <div class="listhead">
+    <span id="count">No cues yet</span>
+    <button id="btn-clear" class="link" hidden>Clear all</button>
+  </div>
+  <ol id="cues" class="cues"></ol>
+</main>
+
+<!-- Jam panel -->
+<div id="jam-panel" class="sheet" hidden>
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <h2>Jam</h2>
+      <button id="jam-close" class="link">Done</button>
+    </div>
+
+    <p class="help">Enter a time a few seconds ahead of the counter you are jamming to. Hit JAM the moment the counter reaches it.</p>
+
+    <div class="tcin">
+      <input id="in-h" inputmode="numeric" maxlength="2" aria-label="Hours" placeholder="HH">
+      <span>:</span>
+      <input id="in-m" inputmode="numeric" maxlength="2" aria-label="Minutes" placeholder="MM">
+      <span>:</span>
+      <input id="in-s" inputmode="numeric" maxlength="2" aria-label="Seconds" placeholder="SS">
+      <span>:</span>
+      <input id="in-f" inputmode="numeric" maxlength="2" aria-label="Frames" placeholder="FF">
+    </div>
+    <div class="row">
+      <button id="jam-tod" class="small">Fill time of day +10s</button>
+      <button id="jam-plus5" class="small">+5s</button>
+    </div>
+
+    <button id="jam-go" class="go">JAM</button>
+
+    <div class="trim" id="trim" hidden>
+      <div class="trim-tc" id="trim-tc">--:--:--:--</div>
+      <div class="help">Running now. Trim if it is off.</div>
+      <div class="row">
+        <button data-trim="-s">-1 s</button>
+        <button data-trim="-f">-1 f</button>
+        <button data-trim="+f">+1 f</button>
+        <button data-trim="+s">+1 s</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Export panel -->
+<div id="export-panel" class="sheet" hidden>
+  <div class="sheet-inner">
+    <div class="sheet-head">
+      <h2>Export</h2>
+      <button id="export-close" class="link">Done</button>
+    </div>
+    <div class="col">
+      <button id="ex-share">Share as text</button>
+      <button id="ex-copy">Copy to clipboard</button>
+      <button id="ex-csv">Download CSV</button>
+    </div>
+    <div id="ex-msg" class="help"></div>
+  </div>
+</div>
+
+<script src="tc.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
